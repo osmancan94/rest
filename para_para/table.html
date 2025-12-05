@@ -1,0 +1,1296 @@
+ <!DOCTYPE html>
+<html lang="tr">
+<head>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" type="module"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lezzet Bahçesi - Premium Menu</title>
+    <style>
+        :root {
+            --primary: #2c5530;
+            --secondary: #d4a574;
+            --accent: #e8c39e;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --background: #fefdf9;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles - RenderForest Style */
+        .header {
+            background: linear-gradient(135deg, var(--primary), #1e3a24);
+            color: var(--white);
+            padding: 40px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path fill="white" d="M30,30 Q50,10 70,30 T90,50 T70,70 T50,90 T30,70 T10,50 T30,30 Z"/></svg>') repeat;
+        }
+
+        .restaurant-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .table-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            position: relative;
+        }
+
+        .table-number {
+            font-size: 1.2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+
+        .cart-summary {
+            background: var(--secondary);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cart-summary:hover {
+            background: #c1915e;
+            transform: translateY(-2px);
+        }
+
+        /* Navigation Styles - RenderForest Style */
+        .categories-nav {
+            background: var(--white);
+            padding: 20px 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .categories-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            background: transparent;
+            border: 2px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+        }
+
+        .category-btn:hover {
+            border-color: var(--secondary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
+        }
+
+        /* Search Bar - RenderForest Style */
+        .search-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .search-bar {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid var(--border);
+            border-radius: 25px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            background: var(--white);
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+            outline: none;
+        }
+
+        /* View Mode Toggle - RenderForest Style */
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .view-btn {
+            background: var(--white);
+            border: 2px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--white);
+        }
+
+        /* Menu Grid - RenderForest Style */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            background: var(--white);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover .item-image img {
+            transform: scale(1.05);
+        }
+
+        .item-content {
+            padding: 25px;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .item-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+            line-height: 1.3;
+        }
+
+        .item-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-left: 15px;
+            white-space: nowrap;
+        }
+
+        .item-description {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-to-cart {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(212, 165, 116, 0.4);
+        }
+
+        /* Gallery View - RenderForest Style */
+        .gallery-container {
+            margin-bottom: 32px;
+        }
+
+        .gallery-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .gallery-item {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(44, 85, 48, 0.3);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 30px 25px 25px;
+            color: white;
+        }
+
+        .gallery-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gallery-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .gallery-price {
+            font-size: 28px;
+            color: var(--secondary);
+            font-weight: 700;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .gallery-add-to-cart {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .gallery-add-to-cart:hover {
+            transform: scale(1.05);
+        }
+
+        /* Modal Styles - RenderForest Style */
+        .modal {
+            background: rgba(0, 0, 0, 0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .modal-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .modal-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-top: 20px;
+        }
+
+        .modal-content textarea {
+            width: 100%;
+            height: 100px;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .star {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--border);
+            transition: color 0.2s;
+        }
+
+        .star.filled {
+            color: var(--secondary);
+        }
+
+        .comment-star {
+            font-size: 1rem;
+            color: var(--secondary);
+        }
+
+        #submit-comment {
+            font-size: 16px;
+            padding: 12px 24px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        #submit-comment:hover {
+            transform: scale(1.05);
+        }
+
+        /* Cart Styles - RenderForest Style */
+        #cart-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(44, 85, 48, 0.3);
+            z-index: 900;
+            transition: all 0.3s ease;
+        }
+
+        #cart-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(44, 85, 48, 0.4);
+        }
+
+        #cart-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            width: 350px;
+            max-height: 500px;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            z-index: 900;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            transform: translateY(100%);
+            opacity: 0;
+            border: 1px solid var(--border);
+        }
+
+        #cart-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #cart-panel h3 {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+        }
+
+        #cart-items {
+            padding: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .remove-from-cart {
+            background: #ff6f61;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            transition: background 0.3s;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .remove-from-cart:hover {
+            background: #e53e3e;
+        }
+
+        #cart-total {
+            padding: 20px;
+            font-weight: 600;
+            border-top: 1px solid var(--border);
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        #checkout-button {
+            margin: 0 20px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            padding: 15px;
+            border-radius: 25px;
+            transition: all 0.3s;
+            font-size: 16px;
+            width: calc(100% - 40px);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #checkout-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(212, 165, 116, 0.4);
+        }
+
+        #checkout-button:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .payment-option {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f7fafc;
+            border-radius: 12px;
+            transition: background 0.3s, transform 0.2s;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .payment-option:hover {
+            background: #e5e7eb;
+            transform: translateY(-3px);
+        }
+
+        .payment-option h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .payment-option p {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .restaurant-name {
+                font-size: 2.5rem;
+            }
+            
+            .table-info {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .categories-container {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding: 10px 0;
+            }
+            
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-item img {
+                height: 250px;
+            }
+
+            .gallery-name {
+                font-size: 20px;
+            }
+
+            .gallery-price {
+                font-size: 24px;
+            }
+
+            .gallery-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            #cart-toggle {
+                bottom: 20px;
+                right: 20px;
+                padding: 15px;
+                font-size: 20px;
+            }
+
+            #cart-panel {
+                width: 300px;
+                bottom: 70px;
+                right: 20px;
+            }
+
+            .modal-content {
+                max-width: 90%;
+                padding: 20px;
+            }
+
+            .modal-content h2 {
+                font-size: 20px;
+            }
+
+            .modal-content h3 {
+                font-size: 16px;
+            }
+
+            .modal-content textarea {
+                font-size: 14px;
+            }
+
+            #submit-comment {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="restaurant-name">LEZZET BAHÇESİ</h1>
+            <h1>MENÜ</h1>
+            <div class="table-info">
+                <div class="table-number">Masa No: <span id="table-number">1</span></div>
+                <div class="cart-summary">Sepet: 0 Ürün - 0 TL</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="categories-nav">
+            <div class="categories-container">
+                <button class="category-btn active" data-category="all">Tümü</button>
+                <button class="category-btn" data-category="baslangiclar">Başlangiçlar</button>
+                <button class="category-btn" data-category="salatalar">Salatalar</button>
+                <button class="category-btn" data-category="kahvaltilar">Kahvaltilar</button>
+                <button class="category-btn" data-category="denizurunleri">Deniz Ürünleri</button>
+                <button class="category-btn" data-category="pizzalar">Pizzalar</button>
+                <button class="category-btn" data-category="burgerler">Burgerler</button>
+                <button class="category-btn" data-category="icecekler">İçecekler</button>
+                <button class="category-btn" data-category="corbalar">Corbalar</button>
+                <button class="category-btn" data-category="kebaplar">Kebaplar</button>
+                <button class="category-btn" data-category="makarnalar">Makarnalar</button>
+                <button class="category-btn" data-category="mexicanmutfagi">Mexican Mutfagi</button>
+                <button class="category-btn" data-category="pidecesitleri">Pide Cesitleri</button>
+                <button class="category-btn" data-category="sandiviclervetostlar">Sandivicler ve Tostlar</button>
+                <button class="category-btn" data-category="steakler">Steakler</button>
+                <button class="category-btn" data-category="tavukyemekleri">Tavuk Yemekleri</button>
+
+            </div>
+        </nav>
+
+        <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Yemek ara...">
+        </div>
+
+        <div class="view-toggle">
+            <button class="view-btn active" data-view="normal">Küçük Kartlar</button>
+            <button class="view-btn" data-view="gallery">Büyük Görünüm</button>
+        </div>
+
+        <!-- NORMAL MOD - KÜÇÜK KARTLAR -->
+        <div class="menu-container" id="normal-menu-container">
+            <div class="menu-grid" id="all-menu-grid"></div>
+        </div>
+
+        <!-- GALLERY MOD - BÜYÜK RESİMLER -->
+        <div class="gallery-container hidden" id="gallery-menu-container">
+            <div class="gallery-grid" id="gallery-menu-grid"></div>
+        </div>
+
+        <!-- MODAL -->
+        <div class="modal hidden" id="modal">
+            <div class="modal-content">
+                <span class="close" id="close-modal" style="float: right; font-size: 24px; cursor: pointer;">×</span>
+                <h2 id="modal-title"></h2>
+                <img id="modal-image" src="" alt="Yemek Resmi" style="max-width: 100%; height: auto; border-radius: 10px; margin: 10px 0;">
+                <p><strong>İçindekiler:</strong> <span id="modal-ingredients"></span></p>
+                <h3>Özelleştirme</h3>
+                <textarea id="modal-customization" placeholder="Yemeğin nasıl olmasını istediğinizi yazın (örneğin, sossuz, az pişmiş)"></textarea>
+                <div id="comment-list"></div>
+                <button id="modal-add-to-cart" class="add-to-cart" style="margin-top: 15px; width: 100%;">Sepete Ekle</button>
+            </div>
+        </div>
+
+        <!-- SEPET -->
+        <button id="cart-toggle">🛒</button>
+        <div id="cart-panel" class="hidden">
+            <h3>Sepetim</h3>
+            <div id="cart-items"></div>
+            <div id="cart-total">Toplam: 0 TL</div>
+            <button id="checkout-button" disabled>Satın Al</button>
+        </div>
+
+        <!-- ÖDEME MODAL -->
+        <div class="modal hidden" id="payment-modal">
+            <div class="modal-content">
+                <span class="close" id="close-payment-modal" style="float: right; font-size: 24px; cursor: pointer;">×</span>
+                <h2>Ödeme Seçenekleri</h2>
+                <div class="payment-option">
+                    <h3>QR ile Ödeme</h3>
+                    <p>Telefonunuzla QR kodu tarayarak ödeyin.</p>
+                </div>
+                <div class="payment-option">
+                    <h3>Kart ile Ödeme</h3>
+                    <p>Kredi veya banka kartıyla ödeyin.</p>
+                </div>
+                <div class="payment-option">
+                    <h3>Kasada Ödeme</h3>
+                    <p>Kasaya giderek nakit veya kartla ödeyin.</p>
+                </div>
+                <div class="payment-option">
+                    <h3>Garson ile Hesabı Gönder</h3>
+                    <p>Garsona siparişinizi iletin, hesabı masanıza getirsin.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase'i başlat
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRcHElPziOGJd7Q8rCcIluLZ2XnI9j4wE",
+            authDomain: "restorant-8e71c.firebaseapp.com",
+            projectId: "restorant-8e71c",
+            storageBucket: "restorant-8e71c.firebasestorage.app",
+            messagingSenderId: "149835762840",
+            appId: "1:149835762840:web:f8f053d46011bc693a94ed",
+            measurementId: "G-EHBJM150B0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentViewMode = 'normal';
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        // QR kod ile masa numarasını alma
+        function getTableNumber() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('table') || '1';
+        }
+
+        // Sepet güncelleme fonksiyonu (optimized with DocumentFragment)
+        function updateCart() {
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotal = document.getElementById('cart-total');
+            const checkoutButton = document.getElementById('checkout-button');
+            const cartSummary = document.querySelector('.cart-summary');
+            
+            if (!cartItemsContainer || !cartTotal || !checkoutButton) return;
+            
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                total += parseFloat(item.price) || 0;
+                
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = item.name + 
+                    (item.customization && item.customization !== 'Özelleştirme yok' 
+                        ? ` (Özelleştirme: ${item.customization})` : '');
+                
+                const priceDiv = document.createElement('div');
+                const priceSpan = document.createElement('span');
+                priceSpan.textContent = `${item.price} TL`;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-from-cart';
+                removeBtn.setAttribute('data-index', index);
+                removeBtn.textContent = 'Sil';
+                
+                priceDiv.appendChild(priceSpan);
+                priceDiv.appendChild(removeBtn);
+                
+                cartItem.appendChild(nameSpan);
+                cartItem.appendChild(priceDiv);
+                fragment.appendChild(cartItem);
+            });
+            
+            // Batch DOM update
+            cartItemsContainer.innerHTML = '';
+            cartItemsContainer.appendChild(fragment);
+            
+            cartTotal.textContent = `Toplam: ${total} TL`;
+            if (cartSummary) {
+                cartSummary.textContent = `Sepet: ${cart.length} Ürün - ${total} TL`;
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            checkoutButton.disabled = cart.length === 0;
+        }
+
+        // Menü öğelerini Firestore'dan yükle
+        function loadMenuItems() {
+            const allMenuGrid = document.getElementById('all-menu-grid');
+            const galleryMenuGrid = document.getElementById('gallery-menu-grid');
+
+            onSnapshot(collection(db, "menuItems"), (querySnapshot) => {
+                allMenuGrid.innerHTML = '';
+                galleryMenuGrid.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    showNotification('Menü öğeleri bulunamadı. Lütfen Firebase\'de veri ekleyin.', 'error');
+                    return;
+                }
+
+                // Use DocumentFragment for better performance
+                const normalFragment = document.createDocumentFragment();
+                const galleryFragment = document.createDocumentFragment();
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.name && data.price && data.category && data.image) {
+                        const item = { id: doc.id, ...data };
+                        
+                        // Normal mod için küçük kart
+                        const menuItem = document.createElement('div');
+                        menuItem.className = 'menu-item';
+                        menuItem.setAttribute('data-id', item.id);
+                        menuItem.setAttribute('data-category', item.category);
+                        menuItem.setAttribute('data-ingredients', item.ingredients || 'Malzemeler belirtilmemiş');
+                        menuItem.setAttribute('data-image', item.image);
+                        menuItem.setAttribute('data-name', item.name); // Add for search optimization
+                        menuItem.setAttribute('data-price', item.price);
+                        menuItem.innerHTML = `
+                            <div class="item-image">
+                                <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/300x180?text=Resim+Yok';">
+                            </div>
+                            <div class="item-content">
+                                <div class="menu-item-details">
+                                    <div class="item-name">${item.name}</div>
+                                    <div class="item-description">${item.description || 'Lezzetli bir seçim'}</div>
+                                    <div class="item-price">${item.price} TL</div>
+                                </div>
+                                <button class="add-to-cart" data-id="${item.id}" data-name="${item.name}" data-price="${item.price}">Sepete Ekle</button>
+                            </div>
+                        `;
+                        normalFragment.appendChild(menuItem);
+
+                        // Gallery mod için büyük resim
+                        const galleryItem = document.createElement('div');
+                        galleryItem.className = 'gallery-item';
+                        galleryItem.setAttribute('data-id', item.id);
+                        galleryItem.setAttribute('data-category', item.category);
+                        galleryItem.setAttribute('data-ingredients', item.ingredients || 'Malzemeler belirtilmemiş');
+                        galleryItem.setAttribute('data-image', item.image);
+                        galleryItem.setAttribute('data-name', item.name); // Add for search optimization
+                        galleryItem.setAttribute('data-price', item.price);
+                        galleryItem.innerHTML = `
+                            <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/800x400?text=Resim+Yok';">
+                            <div class="gallery-overlay">
+                                <div class="gallery-info">
+                                    <div>
+                                        <div class="gallery-name">${item.name}</div>
+                                        <div class="gallery-price">${item.price} TL</div>
+                                    </div>
+                                    <button class="gallery-add-to-cart" data-id="${item.id}" data-name="${item.name}" data-price="${item.price}">Sepete Ekle</button>
+                                </div>
+                            </div>
+                        `;
+                        galleryFragment.appendChild(galleryItem);
+                    }
+                });
+                
+                // Batch DOM updates
+                allMenuGrid.innerHTML = '';
+                galleryMenuGrid.innerHTML = '';
+                allMenuGrid.appendChild(normalFragment);
+                galleryMenuGrid.appendChild(galleryFragment);
+
+                updateMenuFunctionality();
+            });
+        }
+
+        // Tüm menü işlevselliğini güncelle (optimized - only setup once)
+        let menuFunctionalitySetup = false;
+        function updateMenuFunctionality() {
+            // Prevent duplicate event listener setup
+            if (menuFunctionalitySetup) {
+                setupCategoryFilter(); // Re-setup category filter for new items
+                return;
+            }
+            menuFunctionalitySetup = true;
+            
+            setupCategoryFilter();
+            setupSearch();
+            setupViewToggle();
+            setupModal();
+            setupCart();
+            setupPayment();
+        }
+
+        // Kategori filtreleme (optimized with event delegation)
+        let categoryFilterSetup = false;
+        function setupCategoryFilter() {
+            // Use event delegation to prevent duplicate listeners
+            if (categoryFilterSetup) return;
+            categoryFilterSetup = true;
+            
+            const categoryContainer = document.querySelector('.category-filters') || document.body;
+            categoryContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.category-btn');
+                if (!button) return;
+                
+                e.preventDefault();
+                const category = button.getAttribute('data-category');
+                const filterButtons = document.querySelectorAll('.category-btn');
+                
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const allItems = document.querySelectorAll('.menu-item, .gallery-item');
+                allItems.forEach(item => {
+                    if (category === 'all') {
+                        item.classList.remove('hidden');
+                    } else {
+                        const itemCategory = item.getAttribute('data-category');
+                        item.classList.toggle('hidden', itemCategory !== category);
+                    }
+                });
+            });
+        }
+
+        // Debounce utility function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Arama işlevi (optimized with debouncing)
+        function setupSearch() {
+            const searchInput = document.querySelector('.search-bar');
+            if (!searchInput) return;
+            
+            const performSearch = debounce((searchTerm) => {
+                const allItems = document.querySelectorAll('.menu-item, .gallery-item');
+                const term = searchTerm.toLowerCase();
+                
+                allItems.forEach(item => {
+                    // Use data attributes for better performance
+                    const itemName = item.getAttribute('data-name')?.toLowerCase() || '';
+                    item.classList.toggle('hidden', !itemName.includes(term));
+                });
+            }, 300); // 300ms debounce delay
+            
+            searchInput.addEventListener('input', (e) => {
+                performSearch(e.target.value);
+            });
+        }
+
+        // Görünüm modu değiştirme
+        function setupViewToggle() {
+            const viewButtons = document.querySelectorAll('.view-btn');
+            const normalContainer = document.getElementById('normal-menu-container');
+            const galleryContainer = document.getElementById('gallery-menu-container');
+            
+            viewButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const view = button.getAttribute('data-view');
+                    
+                    viewButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    if (view === 'normal') {
+                        normalContainer.classList.remove('hidden');
+                        galleryContainer.classList.add('hidden');
+                        currentViewMode = 'normal';
+                    } else {
+                        normalContainer.classList.add('hidden');
+                        galleryContainer.classList.remove('hidden');
+                        currentViewMode = 'gallery';
+                    }
+                });
+            });
+        }
+
+        // Modal işlevselliği
+        function setupModal() {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalIngredients = document.getElementById('modal-ingredients');
+            const modalImage = document.getElementById('modal-image');
+            const modalCustomization = document.getElementById('modal-customization');
+            const closeModal = document.getElementById('close-modal');
+            const ratingStars = document.querySelectorAll('#modal-rating .star');
+            const commentInput = document.getElementById('comment');
+            const submitComment = document.getElementById('submit-comment');
+            const commentList = document.getElementById('comment-list');
+            const modalAddToCart = document.getElementById('modal-add-to-cart');
+            
+            let currentItemId = null;
+            let currentRating = 0;
+            let currentItem = null;
+
+            // Tıklama event'larını hem normal hem gallery item'lar için ekle
+            function setupItemClickEvents() {
+                const allItems = document.querySelectorAll('.menu-item, .gallery-item');
+                allItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('add-to-cart') || e.target.classList.contains('gallery-add-to-cart')) return;
+                        
+                        currentItemId = item.getAttribute('data-id');
+                        currentItem = {
+                            id: currentItemId,
+                            name: item.classList.contains('gallery-item') ? 
+                                item.querySelector('.gallery-name').textContent : 
+                                item.querySelector('.item-name').textContent,
+                            price: parseInt(item.classList.contains('gallery-item') ? 
+                                item.querySelector('.gallery-price').textContent.replace(' TL', '') : 
+                                item.querySelector('.item-price').textContent.replace(' TL', '')),
+                            image: item.getAttribute('data-image'),
+                            ingredients: item.getAttribute('data-ingredients')
+                        };
+                        
+                        modalTitle.textContent = currentItem.name;
+                        modalIngredients.textContent = currentItem.ingredients;
+                        modalImage.src = currentItem.image;
+                        modalCustomization.value = '';
+                        modal.classList.remove('hidden');
+                        ratingStars.forEach(star => star.classList.remove('filled'));
+                        commentInput.value = '';
+                        currentRating = 0;
+                        loadComments(currentItemId);
+                    });
+                });
+            }
+
+            setupItemClickEvents();
+
+            closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+
+            ratingStars.forEach(star => {
+                star.addEventListener('click', () => {
+                    currentRating = parseInt(star.getAttribute('data-value'));
+                    ratingStars.forEach(s => {
+                        s.classList.toggle('filled', parseInt(s.getAttribute('data-value')) <= currentRating);
+                    });
+                });
+            });
+
+            modalAddToCart.addEventListener('click', () => {
+                if (!currentItem) return;
+                const customization = modalCustomization.value.trim();
+                const itemWithCustomization = { 
+                    ...currentItem, 
+                    customization: customization || 'Özelleştirme yok'
+                };
+                cart.push(itemWithCustomization);
+                updateCart();
+                showNotification(`${currentItem.name} sepete eklendi!`, 'success');
+                modal.classList.add('hidden');
+            });
+        }
+
+
+        function saveComment(itemId, rating, comment) {
+            const comments = JSON.parse(localStorage.getItem(`comments_${itemId}`)) || [];
+            comments.push({ rating, comment });
+            localStorage.setItem(`comments_${itemId}`, JSON.stringify(comments));
+        }
+
+        // Sepet işlevselliği
+        function setupCart() {
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotal = document.getElementById('cart-total');
+            const checkoutButton = document.getElementById('checkout-button');
+            const cartPanel = document.getElementById('cart-panel');
+            const cartToggle = document.getElementById('cart-toggle');
+            const cartSummary = document.querySelector('.cart-summary');
+
+            // Sepete ekleme butonları için event listener'lar
+            function setupAddToCartEvents() {
+                const addToCartButtons = document.querySelectorAll('.add-to-cart, .gallery-add-to-cart');
+                addToCartButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = button.getAttribute('data-id');
+                        const name = button.getAttribute('data-name');
+                        const price = parseInt(button.getAttribute('data-price'));
+                        cart.push({ id, name, price, customization: 'Özelleştirme yok' });
+                        updateCart();
+                        showNotification(`${name} sepete eklendi!`, 'success');
+                    });
+                });
+            }
+
+            setupAddToCartEvents();
+
+            cartToggle.addEventListener('click', () => {
+                cartPanel.classList.toggle('active');
+                if (cartPanel.classList.contains('active')) {
+                    cartPanel.classList.remove('hidden');
+                } else {
+                    setTimeout(() => cartPanel.classList.add('hidden'), 500);
+                }
+            });
+
+            // Sepet silme butonları için event listener ekle
+            cartItemsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-from-cart')) {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    const removedItem = cart[index].name;
+                    cart.splice(index, 1);
+                    updateCart();
+                    showNotification(`${removedItem} sepetten çıkarıldı!`, 'error');
+                }
+            });
+
+            updateCart();
+        }
+
+        // Ödeme işlevselliği
+        function setupPayment() {
+            const paymentModal = document.getElementById('payment-modal');
+            const closePaymentModal = document.getElementById('close-payment-modal');
+            const paymentOptions = document.querySelectorAll('.payment-option');
+            const checkoutButton = document.getElementById('checkout-button');
+
+            checkoutButton.addEventListener('click', () => {
+                if (cart.length > 0) paymentModal.classList.remove('hidden');
+            });
+
+            closePaymentModal.addEventListener('click', () => paymentModal.classList.add('hidden'));
+            paymentModal.addEventListener('click', (e) => {
+                if (e.target === paymentModal) paymentModal.classList.add('hidden');
+            });
+
+            paymentOptions.forEach(option => {
+                option.addEventListener('click', async () => {
+                    const method = option.querySelector('h3').textContent;
+                    
+                    // Siparişi Firestore'a kaydet
+                    if (cart.length > 0) {
+                        try {
+                            const items = cart.map(item => ({
+                                id: item.id,
+                                name: item.name,
+                                price: parseFloat(item.price)
+                            }));
+                            
+                            const total = items.reduce((sum, item) => sum + item.price, 0);
+                            const tableNumber = getTableNumber();
+                            
+                            const orderData = {
+                                items,
+                                total,
+                                status: 'Hazırlanıyor',
+                                createdAt: Timestamp.now(),
+                                paymentMethod: method,
+                                source: 'index.html' // Müşteri menüsünden geldiğini belirtmek için
+                            };
+                            
+                            // Eğer masa numarası varsa ekle
+                            if (tableNumber && tableNumber !== '1') {
+                                orderData.tableNumber = parseInt(tableNumber);
+                            }
+                            
+                            await addDoc(collection(db, 'orders'), orderData);
+                            showNotification(`Siparişiniz alındı! Ödeme: ${method}`, 'success');
+                            
+                            // Sepeti temizle
+                            cart = [];
+                            updateCart();
+                            paymentModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error('Sipariş kaydetme hatası:', error);
+                            showNotification('Sipariş kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                        }
+                    } else {
+                        paymentModal.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // Bildirim fonksiyonu
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        }
+
+        // Sayfa yüklendiğinde menü öğelerini yükle
+        window.addEventListener('load', () => {
+            document.getElementById('table-number').textContent = getTableNumber();
+            loadMenuItems();
+        });
+    </script>
+</body>
+</html>
